@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RainMap AI - Smart Flood Monitor</title>
+  
+  <!-- CDNs for mapping, charts, and iconography -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Local Custom CSS Styling -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- App Mock Mobile Bezel Container -->
+  <div class="app-container">
+
+    <!-- DEVELOPER CONSOLE DRAWER (Slide Down Control Dashboard) -->
+    <div id="developer-console" class="dev-console">
+      <div class="dev-title">
+        <i data-lucide="sliders"></i> Sensor Simulator Panel
+      </div>
+      
+      <div class="dev-grid">
+        <div class="dev-control">
+          <label for="dev-mode">Connection Mode</label>
+          <select id="dev-mode">
+            <option value="mock" selected>Mock Simulator</option>
+            <option value="rest">ESP32 REST (Poll)</option>
+            <option value="websocket">ESP32 WebSocket</option>
+          </select>
+        </div>
+        
+        <div class="dev-control">
+          <label for="dev-connection">WiFi Status</label>
+          <select id="dev-connection">
+            <option value="online" selected>Online</option>
+            <option value="connecting">Connecting...</option>
+            <option value="offline">Offline</option>
+          </select>
+        </div>
+
+        <div class="dev-control" style="grid-column: span 2;">
+          <label id="level-slider-label" for="dev-level">Ultrasonic Level: 45%</label>
+          <input type="range" id="dev-level" min="0" max="100" value="45" step="0.5">
+        </div>
+
+        <div class="dev-control">
+          <label for="dev-rainfall">Precipitation (Analog)</label>
+          <select id="dev-rainfall">
+            <option value="none">None (0%)</option>
+            <option value="light">Light Rain</option>
+            <option value="moderate" selected>Moderate Rain</option>
+            <option value="heavy">Heavy Storm</option>
+          </select>
+        </div>
+
+        <div class="dev-control">
+          <label for="dev-trend">Water Trend (Rate)</label>
+          <select id="dev-trend">
+            <option value="stable" selected>Stable (Flat)</option>
+            <option value="rising">Rising (Inflow)</option>
+            <option value="falling">Falling (Draining)</option>
+          </select>
+        </div>
+
+        <button id="dev-trigger-flood" class="dev-btn">
+          🚨 Trigger Flash Flood Emergency 🚨
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN BRAND HEADER -->
+    <header class="app-header">
+      <div class="brand">
+        <i data-lucide="cloud-lightning" class="brand-icon"></i>
+        <h1>RainMap AI</h1>
+      </div>
+      
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <!-- Telemetry Connection Badge -->
+        <div id="hardware-status-pill" class="status-pill">
+          <span id="hardware-status-dot" class="status-dot online"></span>
+          <span id="hardware-status-text">WiFi</span>
+        </div>
+
+        <!-- Dev Drawer Toggle Trigger Button -->
+        <button id="dev-toggle" class="dev-console-toggle" title="Hardware Simulator Controls">
+          <i data-lucide="terminal" style="width:16px;height:16px;"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ========================================================
+         PAGE 1: WEATHER PAGE VIEW
+         ======================================================== -->
+    <main id="view-weather" class="app-view active">
+      
+      <!-- Current Atmosphere Summary -->
+      <section class="weather-hero">
+        <div class="weather-condition-container">
+          <i id="weather-hero-icon" data-lucide="cloud-rain" class="weather-icon"></i>
+          <div>
+            <div id="weather-hero-temp" class="weather-temp">27°C</div>
+            <div id="weather-hero-desc" class="weather-desc">Rainy / Saturated Soil</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Circular Water level gauge (Ultrasonic reading indicator) -->
+      <section class="glass-card" style="text-align:center;">
+        <div class="section-title" style="justify-content:center;">
+          <i data-lucide="droplet"></i> Active Flood Level
+        </div>
+        
+        <div class="water-gauge-container">
+          <div class="circular-gauge">
+            <svg class="gauge-svg">
+              <circle class="gauge-bg" cx="85" cy="85" r="70" />
+              <circle id="water-gauge-fill" class="gauge-fill" cx="85" cy="85" r="70" />
+            </svg>
+            <div class="gauge-center-text">
+              <span id="gauge-level-value" class="gauge-value">45%</span>
+              <span class="gauge-label">Ultrasonic</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Subgrid: 4 telemetry blocks containing secondary sensor metrics -->
+      <section class="weather-grid">
+        
+        <!-- Risk Alarm Panel -->
+        <div id="card-flood-risk" class="glass-card metric-card">
+          <div class="metric-card-header">
+            <span>Risk Index</span>
+            <i data-lucide="alert-triangle" style="color:var(--color-cyan)"></i>
+          </div>
+          <div id="val-flood-risk" class="metric-value">LOW</div>
+          <div id="desc-flood-risk" class="metric-status" style="color:var(--color-green)">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--color-green)"></span>
+            Secure Region
+          </div>
+        </div>
+
+        <!-- Precipitation Status Panel -->
+        <div id="card-rain-status" class="glass-card metric-card">
+          <div class="metric-card-header">
+            <span>Precipitation</span>
+            <i data-lucide="cloud-drizzle" style="color:var(--color-cyan)"></i>
+          </div>
+          <div id="val-rain-status" class="metric-value">MODERATE</div>
+          <div id="desc-rain-status" class="metric-status" style="color:var(--text-secondary)">
+            Analog: Water present
+          </div>
+        </div>
+
+        <!-- Hardware & Trend Panel -->
+        <div id="card-wifi-status" class="glass-card metric-card">
+          <div class="metric-card-header">
+            <span>Level Trend</span>
+            <i data-lucide="arrow-right" id="icon-trend" style="color:var(--color-cyan)"></i>
+          </div>
+          <div id="val-trend-status" class="metric-value">STABLE</div>
+          <div id="desc-wifi-rssi" class="metric-status" style="color:var(--text-secondary)">
+            Signal: -68 dBm
+          </div>
+        </div>
+
+        <!-- Battery & Fallbacks Status Panel -->
+        <div id="card-battery" class="glass-card metric-card">
+          <div class="metric-card-header">
+            <span>Cellular Backup</span>
+            <i data-lucide="battery" style="color:var(--color-cyan)"></i>
+          </div>
+          <div id="val-gsm-status" class="metric-value">OFFLINE</div>
+          <div id="desc-battery-volt" class="metric-status" style="color:var(--text-secondary)">
+            Batt: 3.82V (Backup)
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- ========================================================
+         PAGE 2: MAP PAGE VIEW (OSM Map full frame overlay)
+         ======================================================== -->
+    <main id="view-map" class="map-container-view">
+      <!-- Absolute overlay widgets -->
+      <div class="map-overlay-panel">
+        <div class="map-search-card">
+          <div class="search-input-group">
+            <i data-lucide="navigation-2" style="transform:rotate(90deg)"></i>
+            <input type="text" value="My Location (Kankannady)" disabled>
+          </div>
+          <div style="height:1px; background:rgba(255,255,255,0.05);"></div>
+          <div class="search-input-group">
+            <i data-lucide="map-pin"></i>
+            <input type="text" placeholder="Search evacuation shelter near you..." value="Town Hall Assembly Shelter" disabled>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Leaflet DOM target container -->
+      <div id="map"></div>
+
+      <!-- Safe Navigation Route Overlay trigger button -->
+      <div class="map-action-bar">
+        <button id="btn-route" class="btn-route">
+          <i data-lucide="shield-alert"></i> Calculate Safe Evacuation Route
+        </button>
+      </div>
+    </main>
+
+    <!-- ========================================================
+         PAGE 3: ANALYTICS PAGE VIEW
+         ======================================================== -->
+    <main id="view-analytics" class="app-view">
+      
+      <!-- Sensor history line graph -->
+      <section class="glass-card">
+        <div class="section-title">
+          <i data-lucide="activity"></i> Level Telemetry History
+        </div>
+        <div class="chart-container">
+          <canvas id="sensor-chart"></canvas>
+        </div>
+      </section>
+
+      <!-- Suburb risk list layout -->
+      <section class="glass-card">
+        <div class="section-title">
+          <i data-lucide="shield-check"></i> Suburb Vulnerability Register
+        </div>
+        
+        <div class="risk-area-list">
+          
+          <!-- Live-linked suburb (represents local sensor coordinates) -->
+          <div class="risk-area-item">
+            <div class="area-info">
+              <i data-lucide="map-pin" style="width:14px;height:14px;color:var(--color-cyan);"></i>
+              <div>
+                <div class="area-name">Padil Underpass (Live)</div>
+                <div id="risk-padil-label" style="font-size:10px;color:var(--text-secondary)">Ultrasonic Level: 45.2%</div>
+              </div>
+            </div>
+            <div id="risk-padil-pill" class="area-status safe">Safe</div>
+          </div>
+
+          <!-- Hardcoded warning suburbs representing neighboring sectors -->
+          <div class="risk-area-item">
+            <div class="area-info">
+              <i data-lucide="map-pin" style="width:14px;height:14px;color:var(--text-secondary);"></i>
+              <div>
+                <div class="area-name">Pumpwell Circle</div>
+                <div style="font-size:10px;color:var(--text-secondary)">Silt levels: Elevated | Minor pooling</div>
+              </div>
+            </div>
+            <div class="area-status moderate">Moderate</div>
+          </div>
+
+          <div class="risk-area-item">
+            <div class="area-info">
+              <i data-lucide="map-pin" style="width:14px;height:14px;color:var(--text-secondary);"></i>
+              <div>
+                <div class="area-name">Surathkal Drainage Area</div>
+                <div style="font-size:10px;color:var(--text-secondary)">Zero backlog reported in catchment area</div>
+              </div>
+            </div>
+            <div class="area-status safe">Safe</div>
+          </div>
+
+          <div class="risk-area-item">
+            <div class="area-info">
+              <i data-lucide="map-pin" style="width:14px;height:14px;color:var(--text-secondary);"></i>
+              <div>
+                <div class="area-name">Jeppu Riverbank</div>
+                <div style="font-size:10px;color:var(--text-secondary)">Estuary tide: High | Spillover threat</div>
+              </div>
+            </div>
+            <div class="area-status moderate">Moderate</div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- AI Core terminal console logs -->
+      <section class="glass-card">
+        <div class="section-title">
+          <i data-lucide="cpu"></i> AI Core Rain Forecast
+        </div>
+        <div class="ai-console">
+          <div class="ai-console-header">
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--color-cyan);animation:pulse-blink 1s infinite"></span>
+            FORECAST CONSOLE // TELEMETRY LINK ACTIVE
+          </div>
+          <div id="ai-terminal-body" class="ai-console-body">
+            <!-- Dynamically populated logging rows -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- BOTTOM APP NAVIGATION BAR (Premium glass panel) -->
+    <nav class="bottom-nav">
+      <button id="tab-weather" class="nav-tab active">
+        <i data-lucide="cloud-rain"></i>
+        <span>Weather</span>
+      </button>
+      
+      <button id="tab-map" class="nav-tab">
+        <i data-lucide="map"></i>
+        <span>Map</span>
+      </button>
+      
+      <button id="tab-analytics" class="nav-tab">
+        <i data-lucide="trending-up"></i>
+        <span>Analytics</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- Primary JS Application Entry Loader -->
+  <script src="js/api.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
