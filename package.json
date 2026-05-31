@@ -1,4 +1,11 @@
 {
+  "name": "rainmap-ai",
+  "version": "1.0.0",
+  "description": "RainMap AI - Smart Flood Monitoring Dashboard",
+  "scripts": {
+    "dev": "npx -y serve -l 3000 -s .",
+    "start": "npx -y serve -l 3000 -s ."
+  },
   "dependencies": {
     "firebase": "^12.14.0"
   }
