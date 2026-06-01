@@ -1,0 +1,328 @@
+/* =========================================================
+   PREMIUM WEATHER HERO
+========================================================= */
+
+.weather-hero {
+  position: relative;
+  overflow: hidden;
+
+  padding: 32px 24px;
+
+  border-radius: 32px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(0, 220, 255, 0.12),
+      rgba(0, 90, 255, 0.08),
+      rgba(0, 0, 0, 0.18)
+    );
+
+  backdrop-filter: blur(24px);
+
+  border:
+    1px solid rgba(255,255,255,0.08);
+
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.35),
+    0 0 20px rgba(0,255,255,0.06);
+
+  margin-bottom: 18px;
+
+  text-align: center;
+}
+
+.weather-hero::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(0,255,255,0.15),
+      transparent 45%
+    );
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   HERO TEMPERATURE
+========================================================= */
+
+.hero-temp {
+  font-size: 78px;
+
+  font-weight: 800;
+
+  color: #ffffff;
+
+  line-height: 1;
+
+  letter-spacing: -3px;
+
+  margin-bottom: 8px;
+
+  text-shadow:
+    0 0 24px rgba(255,255,255,0.12);
+}
+
+/* =========================================================
+   HERO CONDITION
+========================================================= */
+
+.hero-condition-row {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  margin-bottom: 10px;
+}
+
+.hero-icon {
+  width: 28px;
+
+  height: 28px;
+
+  color: #74d8ff;
+}
+
+.hero-desc {
+  font-size: 18px;
+
+  color: #9bdfff;
+
+  font-weight: 500;
+}
+
+/* =========================================================
+   HERO LOCATION
+========================================================= */
+
+.hero-location {
+  font-size: 14px;
+
+  color: #91a6ba;
+
+  margin-bottom: 22px;
+}
+
+/* =========================================================
+   WEATHER SUB METRICS
+========================================================= */
+
+.hero-sub-metrics {
+  display: flex;
+
+  justify-content: center;
+
+  gap: 14px;
+
+  flex-wrap: wrap;
+}
+
+.sub-metric {
+  background:
+    rgba(255,255,255,0.05);
+
+  border:
+    1px solid rgba(255,255,255,0.06);
+
+  border-radius: 16px;
+
+  padding: 10px 16px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  color: #fff;
+
+  font-size: 14px;
+
+  backdrop-filter: blur(10px);
+}
+
+.sub-metric i {
+  width: 16px;
+  height: 16px;
+
+  color: #63d9ff;
+}
+
+/* =========================================================
+   LIVE FLOOD ANALYTICS CARD
+========================================================= */
+
+#firebase-live-card {
+
+  padding: 26px;
+
+  border-radius: 28px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(0,255,255,0.08),
+      rgba(0,0,0,0.25)
+    );
+
+  border:
+    1px solid rgba(255,255,255,0.06);
+
+  backdrop-filter: blur(18px);
+
+  box-shadow:
+    0 8px 30px rgba(0,0,0,0.3);
+}
+
+/* =========================================================
+   ANALYTICS VALUES
+========================================================= */
+
+#rainfall {
+  font-size: 38px;
+
+  font-weight: 800;
+
+  color: #ffffff;
+
+  text-shadow:
+    0 0 16px rgba(255,255,255,0.12);
+}
+
+#flood-risk-level {
+  font-size: 17px;
+
+  font-weight: 700;
+
+  color: #63d9ff;
+}
+
+#status {
+  padding: 7px 16px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+/* =========================================================
+   STATUS COLORS
+========================================================= */
+
+.status-safe {
+  background:
+    rgba(0,255,140,0.15);
+
+  color:
+    #00ff9d;
+}
+
+.status-warning {
+  background:
+    rgba(255,170,0,0.15);
+
+  color:
+    #ffb347;
+}
+
+.status-flood {
+  background:
+    rgba(255,60,60,0.15);
+
+  color:
+    #ff5f5f;
+}
+
+/* =========================================================
+   METRIC CARDS
+========================================================= */
+
+.metric-card {
+
+  border-radius: 24px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,0.04),
+      rgba(255,255,255,0.02)
+    );
+
+  border:
+    1px solid rgba(255,255,255,0.06);
+
+  backdrop-filter: blur(12px);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.metric-card:hover {
+
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 10px 24px rgba(0,255,255,0.08);
+}
+
+.metric-value {
+  font-size: 22px;
+
+  font-weight: 700;
+
+  color: #ffffff;
+}
+
+/* =========================================================
+   WATER GAUGE
+========================================================= */
+
+.circular-gauge {
+
+  filter:
+    drop-shadow(
+      0 0 18px rgba(0,255,255,0.2)
+    );
+}
+
+/* =========================================================
+   MOBILE OPTIMIZATION
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .hero-temp {
+    font-size: 62px;
+  }
+
+  .hero-sub-metrics {
+    flex-direction: column;
+  }
+
+  .weather-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
